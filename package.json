@@ -1,0 +1,29 @@
+{
+  "name": "spendly",
+  "version": "1.0.0",
+  "description": "AI CHAT BOT for PERSONAL FINANCES",
+  "license": "ISC",
+  "author": "gpcorreia",
+  "type": "commonjs",
+  "main": "./src/index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "nodemon --exec ts-node ./src/server.ts"
+  },
+  "dependencies": {
+    "@openrouter/sdk": "^0.12.22",
+    "@supabase/supabase-js": "^2.104.1",
+    "axios": "^1.15.2",
+    "cors": "^2.8.6",
+    "dotenv": "^17.4.2",
+    "express": "^5.2.1",
+    "nodemon": "^3.1.14",
+    "openai": "^6.35.0"
+  },
+  "devDependencies": {
+    "@types/cors": "^2.8.19",
+    "@types/express": "^5.0.6",
+    "@types/node": "^25.6.0",
+    "ts-node": "^10.9.2"
+  }
+}
