@@ -114,12 +114,9 @@ export class WhatsAppController {
     
     let msg = '';
 
-    if(aiResponse.function === 'get_saving_advice') {
-      const last2monthsExpenses = await this.ExpenseRepository.get_saving_advice(user.id);
-      console.log('Last 2 months expenses:', last2monthsExpenses);
-      msg = await this.model.getAIResponse(JSON.stringify(last2monthsExpenses), this.advicePrompt);
-    }
-
+    const last2monthsExpenses = await this.ExpenseRepository.get_saving_advice(user.id);
+    msg = await this.model.getAIResponse(JSON.stringify(last2monthsExpenses), this.advicePrompt);
+  
     return msg;
 
   }
@@ -164,11 +161,9 @@ export class WhatsAppController {
       console.log('Intent AI response:', aiResponse);
 
       if (aiResponse.type === 'advice') {
-        aiResponse = await this.model.getAIResponse(payload.body, this.advicePrompt);
-        msg = aiResponse.msg || this.userRes.generalError();
+        msg = await this.advicePath(aiResponse,user);
       }
       else if(aiResponse.type === 'operation'){
-        aiResponse = await this.model.getAIResponse(payload.body, this.generalPrompt);
         msg = await this.operationsPath(aiResponse,user);
       }
 
@@ -176,7 +171,8 @@ export class WhatsAppController {
         msg = aiResponse.user_reply || this.userRes.generalError();
       }
 
-      const data = await this.whatsappService.sendMessage(payload.number, msg);
+      const data = true;
+      // const data = await this.whatsappService.sendMessage(payload.number, msg);
       if(data) {
         res.status(200).json({ received: true, toSend: msg});
       } else {

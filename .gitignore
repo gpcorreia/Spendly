@@ -1,3 +1,5 @@
-/node_modules
-/dist
-.env
+/model/node_modules
+/backend/node_modules
+/backend/dist
+/model/.env
+/backend/.env
