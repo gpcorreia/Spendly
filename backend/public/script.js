@@ -16,7 +16,7 @@ async function startCheckout(button) {
     const data = await response.json();
 
     if (!response.ok || !data.url) {
-      throw new Error(data.error || "Não foi possível iniciar o pagamento.");
+      throw new Error(data.error || "Nao foi possivel iniciar o pagamento.");
     }
 
     window.location.href = data.url;

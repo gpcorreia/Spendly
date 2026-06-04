@@ -1,11 +1,8 @@
 // aiMockResponses.ts
 
-export type AIResponse = {
-  function: string;
-  confidence: number;
-  args: Record<string, any>;
-  user_reply: string;
-};
+import type { AIResponse } from "./types";
+
+export type { AIResponse };
 
 // 🔹 CREATE EXPENSE
 

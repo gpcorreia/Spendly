@@ -1,3 +1,5 @@
+import { User } from "../repositories/userRepository";
+
 // src/messages/Message.ts
 export class userResponses {
 
@@ -13,6 +15,30 @@ export class userResponses {
 
   private withClosing(message: string): string {
     return `${message}\n\n${this.closingMessage}`;
+  }
+
+  public firstMessage(user: User): string {
+    const firstName = user.name?.trim().split(/\s+/)[0] || "olá";
+
+    return `Olá ${firstName} 👋
+
+Bem-vindo ao Spendly. A partir de agora podes tratar das tuas despesas diretamente por aqui, sem folhas de cálculo, apps complicadas ou esquecimentos no fim do dia.
+
+Para registar uma despesa, escreve naturalmente:
+
+• "almoço 12€"
+• "uber 8,50€"
+• "supermercado 34€"
+
+Também podes perguntar:
+
+• "quanto gastei este mês?"
+• "quanto gastei em comida?"
+• "onde estou a gastar mais?"
+
+Eu organizo tudo por ti e vou ajudando a perceber para onde está a ir o teu dinheiro.
+
+Quando quiseres, envia já a tua primeira despesa.`;
   }
 
   public formatMoney(value: number): string {

@@ -1,97 +1,128 @@
 import { Request, Response } from "express";
+import Stripe from "stripe";
+import { stripe } from "../app";
+import { UserRepository } from "../repositories/userRepository";
+import { sendWelcomeEmail } from "../services/emailService";
 
-if (!process.env.STRIPE_SECRET_KEY) {
-  console.warn("Missing STRIPE_SECRET_KEY. Add it to .env before taking payments.");
-}
-
-if (!process.env.STRIPE_WEBHOOK_SECRET) {
-  console.warn("Missing STRIPE_WEBHOOK_SECRET. Stripe webhooks will fail without it.");
-}
-
-// const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || "sk_test_missing");
+const userRepository = new UserRepository();
+const modelServiceUrl = process.env.MODEL_SERVICE_URL;
+const ANNUAL_PRICE_EUR_CENTS = 4900;
 
 export async function createCheckoutSession(
-  _request: Request,
+  request: Request,
   response: Response
 ): Promise<void> {
   try {
     console.log("Creating Stripe Checkout session for Spendly Annual Access");
-    // const session = await stripe.checkout.sessions.create({
-    //   mode: "payment",
-    //   billing_address_collection: "auto",
-    //   customer_creation: "if_required",
-    //   line_items: [
-    //     {
-    //       price_data: {
-    //         currency: "eur",
-    //         product_data: {
-    //           name: "Spendly Annual Access",
-    //           description: "12 meses de acesso ao Spendly",
-    //         },
-    //         unit_amount: 4900,
-    //       },
-    //       quantity: 1,
-    //     },
-    //   ],
-    //   success_url: `${domain}/success.html`,
-    //   cancel_url: `${domain}/cancel.html`,
-    // });
 
-    // response.json({ url: session.url });
+    if (!process.env.STRIPE_SECRET_KEY) {
+      response.status(500).json({
+        error: "Pagamento indisponivel. Falta configurar a chave Stripe.",
+      });
+      return;
+    }
+
+    const domain =
+      process.env.DOMAIN || `${request.protocol}://${request.get("host")}`;
+
+    const session = await stripe.checkout.sessions.create({
+      payment_method_types: ["card"],
+      line_items: [
+        {
+          price_data: {
+            currency: "eur",
+            product_data: {
+              name: "Spendly Annual Access",
+              images: [
+                "https://drajbrhctejnaqbutwof.supabase.co/storage/v1/object/public/brand/spendly_logo_transparent.png",
+              ],
+            },
+            unit_amount: ANNUAL_PRICE_EUR_CENTS,
+          },
+          quantity: 1,
+        },
+      ],
+      mode: "payment",
+      success_url: `${domain}/success`,
+      cancel_url: `${domain}/cancel`,
+    });
+
+    response.status(200).json({ url: session.url });
   } catch (error) {
     console.error("Unable to create Stripe Checkout session:", error);
     response.status(500).json({
-      error: "Não foi possível iniciar o pagamento. Tenta novamente dentro de instantes.",
+      error: "Nao foi possivel iniciar o pagamento. Tenta novamente dentro de instantes.",
     });
   }
 }
 
 export async function handleStripeWebhook(
-  request: Request,
-  response: Response
+  req: Request,
+  res: Response
 ): Promise<void> {
-  // const signature = request.headers["stripe-signature"];
-  // let event: Stripe.Event;
+  const signature = req.headers["stripe-signature"];
 
-  // try {
-  //   event = stripe.webhooks.constructEvent(
-  //     request.body,
-  //     signature as string,
-  //     process.env.STRIPE_WEBHOOK_SECRET as string
-  //   );
-  // } catch (error) {
-  //   const message = error instanceof Error ? error.message : "Unknown webhook error";
-  //   console.error("Stripe webhook signature verification failed:", message);
-  //   response.status(400).send(`Webhook Error: ${message}`);
-  //   return;
-  // }
+  if (!signature || !process.env.STRIPE_WEBHOOK_SECRET) {
+    res.status(400).send("Missing Stripe webhook signature or secret");
+    return;
+  }
 
-  // if (event.type === "checkout.session.completed") {
-  //   const session = event.data.object;
-  //   const customerEmail = session.customer_details?.email || session.customer_email || null;
+  let event: Stripe.Event;
 
-  //   console.log("Spendly payment completed");
-  //   console.log("Customer email:", customerEmail);
-  //   console.log("Amount:", session.amount_total);
-  //   console.log("Session ID:", session.id);
+  try {
+    event = stripe.webhooks.constructEvent(
+      req.body,
+      signature,
+      process.env.STRIPE_WEBHOOK_SECRET
+    );
+  } catch (error) {
+    res.status(400).send("Invalid Stripe webhook signature");
+    return;
+  }
 
-  //   await insertPayment({
-  //     stripe_session_id: session.id,
-  //     customer_email: customerEmail,
-  //     amount_total: session.amount_total || 0,
-  //     currency: session.currency || "eur",
-  //     payment_status: session.payment_status || "paid",
-  //     product_name: "Spendly Annual Access",
-  //   });
+  if (event.type === "checkout.session.completed") {
+    const session = event.data.object as Stripe.Checkout.Session;
+    const email = session.customer_details?.email || "";
+    const name = session.customer_details?.name || "Customer";
 
-  //   /*
-  //     This is where you would store the customer in Supabase or database
-  //     and grant access to Spendly.
+    if (!email) {
+      console.error("Checkout completed without customer email.", {
+        sessionId: session.id,
+      });
+      res.status(400).send("Missing customer email");
+      return;
+    }
 
-  //     Important: the Spendly product itself runs in a separate server (/model).
-  //     This backend does not control the product. It only handles payments.
-  //   */
-  // }
+    const user = await userRepository.create({ email, name, payment: true });
+    const emailSent = await sendWelcomeEmail({
+      to: user.email,
+      name: user.name,
+      accessToken: user.access_token,
+    });
 
-  response.json({ received: true });
+    if (emailSent) {
+      const requestFirstMessage = await fetch(
+        `${modelServiceUrl}/meta/activate/${user.id}`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ user_id: user.id }),
+        }
+      );
+
+      if (!requestFirstMessage.ok) {
+        console.error("Failed to trigger first WhatsApp message after email sent.", {
+          userId: user.id,
+          status: requestFirstMessage.status,
+          statusText: requestFirstMessage.statusText,
+        });
+      }
+    } else {
+      console.error("Failed to send welcome email.");
+    }
+  }
+
+  res.json({ received: true });
 }

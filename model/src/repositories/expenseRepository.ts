@@ -1,5 +1,5 @@
-  import { AIResponse } from '../aiMockResponses';
 import supabase  from '../config/supabase';
+import type { AIResponse } from '../types';
 
 export class ExpenseRepository {
 

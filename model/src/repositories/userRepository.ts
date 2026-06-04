@@ -1,22 +1,7 @@
 import supabase from '../config/supabase';
-import { ExpenseRepository }    from './expenseRepository';
+import type { User, UserPayload } from '../types';
 
-export type User = {
-  id: string;
-  phone_number: string;
-  email: string;
-  name: string;
-  number_id: string;
-  timestamp: string;
-};
-
-export type UserPayload = {
-  phoneNumber: string;
-  email?: string;
-  name: string;
-  number_id: string;
-  timestamp: string;
-};
+export type { User, UserPayload };
 
 export class UserRepository {
 
@@ -48,6 +33,7 @@ export class UserRepository {
       .single();
 
     if (error) {
+      console.error('Error creating user:', error);
       throw error;
     }
 
@@ -60,5 +46,25 @@ export class UserRepository {
       user = await this.create(payload);
     }
     return user;
+  }
+  
+  async findIfActivate(user_id: string): Promise<User> {
+    const { data, error } = await supabase
+      .from('users')
+      .select('*')
+      .eq('id', user_id)
+      .single();
+
+    if (error) {
+      console.error('Error finding user:', error);
+      throw error;
+    }
+
+    if (!data || !data.access_token) {
+      throw new Error('User not activated');
+      
+    }
+  
+    return data as User;
   }
 }

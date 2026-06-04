@@ -3,7 +3,7 @@
     "target": "ES2022",
     "module": "CommonJS",
     "moduleResolution": "Node",
-    "rootDir": ".",
+    "rootDir": "src",
     "outDir": "dist",
     "strict": true,
     "esModuleInterop": true,
@@ -12,11 +12,7 @@
     "resolveJsonModule": true
   },
   "include": [
-    "app.ts",
-    "src/server.ts",
-    "src/config/**/*.ts",
-    "src/controllers/**/*.ts",
-    "src/routes/**/*.ts"
+    "src/**/*.ts"
   ],
   "exclude": [
     "node_modules",

@@ -3,18 +3,39 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="Pagamento cancelado no Spendly.">
+    <meta name="robots" content="noindex, nofollow">
     <title>Pagamento cancelado | Spendly</title>
-    <link rel="stylesheet" href="styles.css">
+    <link rel="icon" href="/img/spendly_logo_transparent.png">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/css/styles.css">
   </head>
-  <body class="status-page">
+  <body class="status-page status-page-cancel">
     <main class="status-card">
-      <a class="brand status-brand" href="/">
-        <span class="brand-mark">S</span>
-        <span>Spendly</span>
+      <a class="brand status-brand" href="/" aria-label="Spendly">
+        <span class="brand-mark">
+          <img src="/img/spendly_logo_transparent.png" alt="" aria-hidden="true">
+        </span>
+        <span class="brand-name">Spendly</span>
       </a>
-      <h1>Pagamento cancelado.</h1>
-      <p>Podes tentar novamente quando quiseres.</p>
-      <a class="primary-button" href="/">Tentar novamente</a>
+
+      <div class="status-icon cancel" aria-hidden="true">
+        <span></span>
+      </div>
+
+      <p class="eyebrow">Pagamento cancelado</p>
+      <h1>Nada foi cobrado.</h1>
+      <p>
+        A sess&atilde;o de pagamento foi interrompida. Podes voltar ao site e
+        tentar novamente quando quiseres.
+      </p>
+
+      <div class="status-actions">
+        <a class="primary-button" href="/#preco">Tentar novamente</a>
+        <a class="secondary-link" href="/">Voltar ao in&iacute;cio</a>
+      </div>
     </main>
   </body>
 </html>

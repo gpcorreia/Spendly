@@ -3,18 +3,39 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Pagamento concluído | Spendly</title>
-    <link rel="stylesheet" href="styles.css">
+    <meta name="description" content="Pagamento conclu&iacute;do com sucesso no Spendly.">
+    <meta name="robots" content="noindex, nofollow">
+    <title>Pagamento conclu&iacute;do | Spendly</title>
+    <link rel="icon" href="/img/spendly_logo_transparent.png">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/css/styles.css">
   </head>
-  <body class="status-page">
+  <body class="status-page status-page-success">
     <main class="status-card">
-      <a class="brand status-brand" href="/">
-        <span class="brand-mark">S</span>
-        <span>Spendly</span>
+      <a class="brand status-brand" href="/" aria-label="Spendly">
+        <span class="brand-mark">
+          <img src="/img/spendly_logo_transparent.png" alt="" aria-hidden="true">
+        </span>
+        <span class="brand-name">Spendly</span>
       </a>
-      <h1>Pagamento concluído com sucesso.</h1>
-      <p>Vamos enviar-te o acesso ao Spendly por email.</p>
-      <a class="primary-button" href="/">Voltar ao site</a>
+
+      <div class="status-icon success" aria-hidden="true">
+        <span></span>
+      </div>
+
+      <p class="eyebrow">Pagamento aprovado</p>
+      <h1>Est&aacute; tudo pronto.</h1>
+      <p>
+        Obrigado pela compra. Vamos enviar-te os detalhes de acesso ao Spendly
+        por email assim que o pagamento for confirmado.
+      </p>
+
+      <div class="status-actions">
+        <a class="primary-button" href="/">Voltar ao site</a>
+        <a class="secondary-link" href="/#faq">Ver perguntas frequentes</a>
+      </div>
     </main>
   </body>
 </html>

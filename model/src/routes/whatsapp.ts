@@ -6,5 +6,6 @@ const whatsappController = new WhatsAppController();
 
 router.get('/webhook', whatsappController.verifyWebhook);
 router.post('/webhook', whatsappController.handleMessage);
+router.post('/activate/:user_id', whatsappController.firstMessage);
 
 export default router;

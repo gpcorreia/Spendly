@@ -3,7 +3,6 @@ import "dotenv/config";
 import express, { NextFunction, Request, Response } from "express";
 import cors from "cors";
 
-import usersRoutes from "./routes/users";
 import webhooks from "./routes/whatsapp";
 
 const app = express();
@@ -38,7 +37,6 @@ app.use((req: Request, res: Response, next: NextFunction) => {
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-app.use("/users", usersRoutes);
 app.use("/meta", webhooks);
 
 
