@@ -42,6 +42,9 @@ export async function createCheckoutSession(
           quantity: 1,
         },
       ],
+     phone_number_collection: {
+        enabled: true,
+      },
       mode: "payment",
       success_url: `${domain}/success`,
       cancel_url: `${domain}/cancel`,
@@ -84,6 +87,7 @@ export async function handleStripeWebhook(
     const session = event.data.object as Stripe.Checkout.Session;
     const email = session.customer_details?.email || "";
     const name = session.customer_details?.name || "Customer";
+    const phone_number = session.customer_details?.phone || "";
 
     if (!email) {
       console.error("Checkout completed without customer email.", {
@@ -93,7 +97,7 @@ export async function handleStripeWebhook(
       return;
     }
 
-    const user = await userRepository.create({ email, name, payment: true });
+    const user = await userRepository.create({ email, name, phone_number, payment: true });
     const emailSent = await sendWelcomeEmail({
       to: user.email,
       name: user.name,

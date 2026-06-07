@@ -15,6 +15,7 @@ export type User = {
 export type CreateUserPayload = {
   email: string;
   name: string;
+  phone_number: string;
   payment: boolean;
 };
 
@@ -26,6 +27,7 @@ export class UserRepository {
       .insert({
         email: user.email || '',
         name: user.name,
+        phone_number: user.phone_number,
         payment: user.payment,
         timestamp: Date.now().toString(),
         access_token: accessToken,
