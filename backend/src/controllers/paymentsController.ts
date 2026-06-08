@@ -8,6 +8,42 @@ const userRepository = new UserRepository();
 const modelServiceUrl = process.env.MODEL_SERVICE_URL;
 const ANNUAL_PRICE_EUR_CENTS = 4900;
 
+async function triggerFirstWhatsAppMessage(userId: string): Promise<void> {
+  if (!modelServiceUrl) {
+    console.error("Missing MODEL_SERVICE_URL. First WhatsApp message was not triggered.", {
+      userId,
+    });
+    return;
+  }
+
+  try {
+    const requestFirstMessage = await fetch(
+      `${modelServiceUrl}/meta/activate/${userId}`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ user_id: userId }),
+      }
+    );
+
+    if (!requestFirstMessage.ok) {
+      console.error("Failed to trigger first WhatsApp message.", {
+        userId,
+        status: requestFirstMessage.status,
+        statusText: requestFirstMessage.statusText,
+        body: await requestFirstMessage.text(),
+      });
+    }
+  } catch (error) {
+    console.error("Unable to trigger first WhatsApp message.", {
+      userId,
+      error,
+    });
+  }
+}
+
 export async function createCheckoutSession(
   request: Request,
   response: Response
@@ -97,34 +133,35 @@ export async function handleStripeWebhook(
       return;
     }
 
-    const user = await userRepository.create({ email, name, phone_number, payment: true });
-    const emailSent = await sendWelcomeEmail({
-      to: user.email,
-      name: user.name,
-      accessToken: user.access_token,
-    });
+    try {
+      const user = await userRepository.create({ email, name, phone_number, payment: true });
 
-    if (emailSent) {
-      const requestFirstMessage = await fetch(
-        `${modelServiceUrl}/meta/activate/${user.id}`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ user_id: user.id }),
+      try {
+        const emailSent = await sendWelcomeEmail({
+          to: user.email,
+          name: user.name,
+          accessToken: user.access_token,
+        });
+
+        if (!emailSent) {
+          console.error("Welcome email was not sent.", { userId: user.id });
         }
-      );
-
-      if (!requestFirstMessage.ok) {
-        console.error("Failed to trigger first WhatsApp message after email sent.", {
+      } catch (error) {
+        console.error("Failed to send welcome email.", {
           userId: user.id,
-          status: requestFirstMessage.status,
-          statusText: requestFirstMessage.statusText,
+          email: user.email,
+          error,
         });
       }
-    } else {
-      console.error("Failed to send welcome email.");
+
+      await triggerFirstWhatsAppMessage(user.id);
+    } catch (error) {
+      console.error("Failed to process checkout.session.completed.", {
+        sessionId: session.id,
+        error,
+      });
+      res.status(500).send("Failed to process checkout session");
+      return;
     }
   }
 
