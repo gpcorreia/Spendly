@@ -147,7 +147,6 @@ export class WhatsAppController {
         timestamp: payload.timestamp,
         email: '',
       });
-
       // Decide if this is advice or an operation in one AI call.
       const aiResponse = await this.model.getAIResponse(payload.body, this.operationPrompt);
       console.log('AI response:', aiResponse);

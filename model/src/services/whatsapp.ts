@@ -7,6 +7,13 @@ export class WhatsAppService {
   constructor() {
     this.accessToken = process.env.WHATSAPP_ACCESS_TOKEN!;
     this.phoneNumberId = process.env.WHATSAPP_PHONE_NUMBER_ID!;
+
+    if (!this.accessToken || !this.phoneNumberId) {
+      console.warn('Missing WhatsApp env variables.', {
+        hasAccessToken: Boolean(this.accessToken),
+        hasPhoneNumberId: Boolean(this.phoneNumberId),
+      });
+    }
   }
 
   async sendMessage(to: string, message: string): Promise<boolean> {
@@ -36,11 +43,18 @@ export class WhatsAppService {
       return true;
     } catch (error) {
       if (axios.isAxiosError(error)) {
+        const metaError = error.response?.data?.error;
         console.error('Error sending WhatsApp message:', {
           status: error.response?.status,
+          message: metaError?.message,
+          type: metaError?.type,
+          code: metaError?.code,
+          errorSubcode: metaError?.error_subcode,
+          fbtraceId: metaError?.fbtrace_id,
           data: error.response?.data,
           to,
           phoneNumberId: this.phoneNumberId,
+          hasAccessToken: Boolean(this.accessToken),
         });
       } else {
         console.error('Error sending WhatsApp message:', error);

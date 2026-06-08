@@ -87,7 +87,7 @@ export async function handleStripeWebhook(
     const session = event.data.object as Stripe.Checkout.Session;
     const email = session.customer_details?.email || "";
     const name = session.customer_details?.name || "Customer";
-    const phone_number = session.customer_details?.phone || "";
+    const phone_number = session.customer_details?.phone || "".replace("+", "");
 
     if (!email) {
       console.error("Checkout completed without customer email.", {
