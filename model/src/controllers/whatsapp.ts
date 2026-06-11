@@ -203,13 +203,15 @@ export class WhatsAppController {
       const sent = await this.whatsappService.sendMessage(user.phone_number, message);
       
       if(sent) {
-        res.status(200).json({ success: true });
+        res.status(200).json({ success: true, message: 'First WhatsApp message sent' });
       } else {
         res.status(500).json({ success: false, error: 'Failed to send WhatsApp message' });
       }
     } catch (error) {
       console.error('Error sending first WhatsApp message:', error);
-      res.status(500).json({ success: false, error: 'Failed to send first WhatsApp message' });
+      if (!res.headersSent) {
+        res.status(500).json({ success: false, error: 'Failed to send first WhatsApp message' });
+      }
     }
   }
 }

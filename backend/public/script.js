@@ -1,4 +1,6 @@
 const checkoutButtons = document.querySelectorAll(".checkout-button");
+const packageButtons = document.querySelectorAll(".scroll-to-package");
+const packageSection = document.querySelector("#pacote");
 
 async function startCheckout(button) {
   const originalText = button.textContent;
@@ -32,6 +34,12 @@ async function startCheckout(button) {
 
 checkoutButtons.forEach((button) => {
   button.addEventListener("click", () => startCheckout(button));
+});
+
+packageButtons.forEach((button) => {
+  button.addEventListener("click", () => {
+    packageSection?.scrollIntoView({ behavior: "smooth", block: "start" });
+  });
 });
 
 const observer = new IntersectionObserver(

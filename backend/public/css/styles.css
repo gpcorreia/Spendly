@@ -875,6 +875,7 @@ a {
     min-height: auto;
     gap: 44px;
     padding-top: 50px;
+    padding-bottom: 46px;
   }
 
   .phone-shell {
@@ -909,7 +910,12 @@ a {
   }
 
   .hero-copy h1 {
-    font-size: clamp(2.55rem, 15vw, 3.9rem);
+    font-size: clamp(2.35rem, 13vw, 3.45rem);
+  }
+
+  .hero-subtitle {
+    margin-top: 20px;
+    line-height: 1.55;
   }
 
   .hero-actions,
@@ -922,7 +928,7 @@ a {
   }
 
   .phone-shell {
-    width: min(342px, 100%);
+    width: min(330px, 100%);
     padding: 10px;
     border-radius: 48px;
   }
@@ -933,8 +939,7 @@ a {
     width: 3px;
     height: 70px;
     box-shadow:
-      0 98px 0 #34383b,
-      346px 52px 0 #34383b;
+      0 98px 0 #34383b;
   }
 
   .phone-shell::after {
@@ -989,13 +994,28 @@ a {
     padding-bottom: 62px;
   }
 
+  .trust-row {
+    margin-top: 28px;
+  }
+
+  .trust-row span {
+    flex: 1 1 100%;
+    text-align: center;
+  }
+
   .pricing-card,
   .conversation-card,
   .status-card {
     padding: 24px;
   }
 
+  .pricing-header h3 {
+    font-size: clamp(2.65rem, 14vw, 3.35rem);
+  }
+
   .final-cta {
     margin-bottom: 42px;
+    padding-left: 24px;
+    padding-right: 24px;
   }
 }

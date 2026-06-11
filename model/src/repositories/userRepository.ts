@@ -55,6 +55,7 @@ export class UserRepository {
       .eq('id', user_id)
       .single();
 
+    console.log('findIfActivate result:', { data, error });
     if (error) {
       console.error('Error finding user:', error);
       throw error;

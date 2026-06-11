@@ -49,6 +49,10 @@ app.use((req: Request, res: Response, next: NextFunction) => {
 
 // error handler
 app.use((err: Error & { status?: number }, req: Request, res: Response, next: NextFunction) => {
+  if (res.headersSent) {
+    return next(err);
+  }
+
   const status = err.status ?? 500;
   res.status(status).json({
     message: "Error not found! Status: " + status,
