@@ -120,6 +120,8 @@ export async function handleStripeWebhook(
   }
 
   if (event.type === "checkout.session.completed") {
+
+
     const session = event.data.object as Stripe.Checkout.Session;
     const email = session.customer_details?.email || "";
     const name = session.customer_details?.name || "Customer";
@@ -132,6 +134,8 @@ export async function handleStripeWebhook(
       res.status(400).send("Missing customer email");
       return;
     }
+
+    res.status(200).json({ received: true });
 
     try {
       const user = await userRepository.create({ email, name, phone_number, payment: true });
@@ -165,5 +169,4 @@ export async function handleStripeWebhook(
     }
   }
 
-  res.json({ received: true });
 }
