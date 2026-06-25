@@ -6,10 +6,10 @@ export class ExpenseRepository {
 
   async findByUserId(userId: string): Promise<any[]> {
     const { data, error } = await supabase
-      .from('transactions')
+      .from('expenses')
       .select('*')
       .eq('user_id', userId)
-      .order('created_at', { ascending: false });
+      .order('expense_date', { ascending: false });
 
     if (error) {
       throw error;
@@ -42,7 +42,7 @@ export class ExpenseRepository {
       .from('expenses')
       .select('amount, category')
       .eq('user_id', userId)
-      .gte('transaction_date', startDate.toISOString().split('T')[0]);
+      .gte('expense_date', startDate.toISOString().split('T')[0]);
  
     if (error) {
       throw error;
@@ -63,8 +63,8 @@ export class ExpenseRepository {
         user_id: userId,
         amount: expense.args.amount,
         category: expense.args.category,
-        description: expense.args.description,
-        created_at: expense.args.date || new Date().toISOString().split('T')[0],
+        expense_date: expense.args.date,
+        description: expense.args.description
       })
       .select()
       .single();
@@ -82,8 +82,8 @@ export class ExpenseRepository {
 
     const { data, error } = await supabase
     .from('expenses')
-    .select('category, amount, created_at')
-    .eq('user_id', userId).gte('created_at', begin).lte('created_at', end);    
+    .select('category, amount, expense_date')
+    .eq('user_id', userId).gte('expense_date', begin).lte('expense_date', end);    
 
     if (error) throw error;
     let total = 0;
@@ -103,11 +103,12 @@ export class ExpenseRepository {
   async get_specific_category_spending(userId:string,expense: AIResponse): Promise<any> {
     const begin = expense.args.start_date;
     const end = expense.args.end_date;
+    let list_of_expenses: { description: string; amount: string; date: string; }[] = [];
 
     const { data, error } = await supabase
     .from('expenses')
-    .select('category, amount, created_at').like('category', `%${expense.args.category}%`)
-    .eq('user_id', userId).gte('created_at', begin).lte('created_at', end);    
+    .select('*').eq('category', expense.args.category)
+    .eq('user_id', userId).gte('expense_date', begin).lte('expense_date', end);    
 
     if (error) throw error;
     let total = 0;
@@ -118,10 +119,16 @@ export class ExpenseRepository {
       acc[curr.category] += Number(curr.amount);
       total += Number(curr.amount);
       
+      list_of_expenses.push({
+        description: curr.description,
+        amount: curr.amount,
+        date: curr.expense_date
+      });
+      
       return acc;
     }, {});
 
-    return {total,result};
+    return {total,list_of_expenses,result};
   }
   
   async get_days_spending_month(userId:string,expense: AIResponse): Promise<any> {
@@ -131,7 +138,7 @@ export class ExpenseRepository {
     const { data, error } = await supabase
     .from('expenses')
     .select('description, amount')
-    .eq('user_id', userId).gte('created_at', begin).lte('created_at', end).order('created_at', { ascending: true });
+    .eq('user_id', userId).gte('expense_date', begin).lte('expense_date', end).order('expense_date', { ascending: true });
     
     console.log('Expenses from DB:', data, 'Error:', error);
     if (error) {
@@ -164,7 +171,7 @@ export class ExpenseRepository {
       .from('expenses')
       .select('description,category, amount')
       .eq('user_id', userId)
-      .gte('created_at', new Date(new Date().setDate(new Date().getDate() - 60)).toISOString().split('T')[0]);
+      .gte('expense_date', new Date(new Date().setDate(new Date().getDate() - 60)).toISOString().split('T')[0]);
 
     if (error) {
       throw error; 

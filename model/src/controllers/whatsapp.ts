@@ -6,6 +6,10 @@ import { userResponses } from '../messages/userResponses';
 import { formatAdvicePrompt } from '../prompts/advicePrompt';
 import { formatOperationPrompt } from '../prompts/operationPrompts';
 import { AIModel } from '../config/aiModel';
+import {
+  validateAdviceResponse,
+  validateAIResponse,
+} from '../validation/aiResponse';
 import type {
   AIResponse,
   AIResponseAdvice,
@@ -37,7 +41,6 @@ export class WhatsAppController {
   private model: AIModel;
   private userRes: userResponses;
   private advicePrompt : string;
-  private operationPrompt : string;
   private processedMessageIds = new Set<string>();
 
 
@@ -49,7 +52,6 @@ export class WhatsAppController {
     this.model = new AIModel();
     this.userRes = new userResponses();
     this.advicePrompt = formatAdvicePrompt();
-    this.operationPrompt = formatOperationPrompt();
   }
 
   // add message to the queue and check if it was processed in the last hour to avoid duplicates in case of webhook retries
@@ -74,17 +76,41 @@ export class WhatsAppController {
     
     if(aiResponse.function === 'create_expense') {
         await this.ExpenseRepository.createExpense(user.id,aiResponse);
-        msg = this.userRes.expenseCreated(aiResponse.args.amount, aiResponse.args.category,aiResponse.args.date,aiResponse.args.description);
+        msg = this.userRes.expenseCreated(
+          aiResponse.args.amount!,
+          aiResponse.args.category!,
+          aiResponse.args.date!,
+          aiResponse.args.description,
+        );
       }
       
       else if(aiResponse.function === 'get_category_spending') {
-        const categorySpending = await this.ExpenseRepository.get_category_spending(user.id,aiResponse);
-        msg = this.userRes.monthlyByCategory(months[aiResponse.args.period],categorySpending.total,categorySpending.result);
+        if(aiResponse.args.category) {
+          const specificCategorySpending = await this.ExpenseRepository.get_specific_category_spending(user.id,aiResponse);
+          msg = this.userRes.categorySummary(
+            aiResponse.args.category,
+            months[aiResponse.args.period!] ?? aiResponse.args.period!,
+            specificCategorySpending.list_of_expenses,
+            specificCategorySpending.total,
+          );
+        }
+        else{
+          const categorySpending = await this.ExpenseRepository.get_category_spending(user.id,aiResponse);
+          msg = this.userRes.monthlyByCategory(
+            months[aiResponse.args.period!] ?? aiResponse.args.period!,
+            categorySpending.total,
+            categorySpending.result,
+          );
+        }
       }
       
       else if(aiResponse.function === 'get_days_spending_month') {
         const expensesofMonth = await this.ExpenseRepository.get_days_spending_month(user.id,aiResponse);
-        msg = this.userRes.monthlySummary(months[aiResponse.args.period], expensesofMonth.total, expensesofMonth.data);
+        msg = this.userRes.monthlySummary(
+          months[aiResponse.args.period!] ?? aiResponse.args.period!,
+          expensesofMonth.total,
+          expensesofMonth.data,
+        );
       }
       
       else if(aiResponse.function === 'delete_last_expense') {
@@ -101,7 +127,11 @@ export class WhatsAppController {
     let msg = '';
 
     const last2monthsExpenses = await this.ExpenseRepository.get_saving_advice(user.id);
-    const adviceResponse: AIResponseAdvice = await this.model.getAIResponse(JSON.stringify(last2monthsExpenses), this.advicePrompt);
+    const adviceResponse: AIResponseAdvice = await this.model.getAIResponse(
+      JSON.stringify(last2monthsExpenses),
+      this.advicePrompt,
+      validateAdviceResponse,
+    );
     msg = adviceResponse.msg;
   
     return msg;
@@ -110,8 +140,6 @@ export class WhatsAppController {
   
   handleMessage = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
-      console.log('WhatsApp webhook received:', JSON.stringify(req.body, null, 2));
-
       const value = req.body.value ?? req.body.entry?.[0]?.changes?.[0]?.value as WhatsAppWebhookValue | undefined;
       const message = value?.messages?.[0];
       let msg = '';
@@ -147,26 +175,50 @@ export class WhatsAppController {
         timestamp: payload.timestamp,
         email: '',
       });
-      // Decide if this is advice or an operation in one AI call.
-      const aiResponse = await this.model.getAIResponse(payload.body, this.operationPrompt);
-      console.log('AI response:', aiResponse);
 
-      if (aiResponse.type === 'advice') {
-        msg = await this.advicePath(aiResponse,user);
-      }
-      else if(aiResponse.type === 'operation'){
-        msg = await this.operationsPath(aiResponse,user);
+      try {
+        // Rebuild the prompt for every message so relative dates always use today's date.
+        const aiResponse = await this.model.getAIResponse(
+          payload.body,
+          formatOperationPrompt(),
+          validateAIResponse,
+        );
+
+        console.log('AI operation validated:', {
+          messageId: payload.message_id,
+          type: aiResponse.type,
+          function: aiResponse.function,
+          confidence: aiResponse.confidence,
+        });
+
+        if (aiResponse.type === 'advice') {
+          msg = await this.advicePath(aiResponse,user);
+        }
+        else if(aiResponse.type === 'operation'){
+          msg = await this.operationsPath(aiResponse,user);
+        }
+
+        if (!msg) {
+          msg = aiResponse.user_reply || this.userRes.generalError();
+        }
+      } catch (error) {
+        console.error('Unable to process AI operation:', {
+          messageId: payload.message_id,
+          error: error instanceof Error ? error.message : String(error),
+        });
+        msg = this.userRes.generalError();
       }
 
-      if (!msg) {
-        msg = aiResponse.user_reply || this.userRes.generalError();
+      if(process.env.TEST_MODE === 'true') {
+        console.log('TEST_MODE MESSAGE:', {
+          to: payload.number,
+          message: msg,
+        });
       }
-
-      // const data = true;
-      const data = await this.whatsappService.sendMessage(payload.number, msg);
-      if (!data) {
-        console.error('Failed to send WhatsApp message:', payload.message_id);
-      }
+      // const data = await this.whatsappService.sendMessage(payload.number, msg);
+      // if (!data) {
+      //   console.error('Failed to send WhatsApp message:', payload.message_id);
+      // }
     } catch (error) {
       console.error('Error handling WhatsApp webhook:', error);
       if (!res.headersSent) {

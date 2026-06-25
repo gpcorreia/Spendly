@@ -16,11 +16,21 @@ export type UserPayload = {
   timestamp: string;
 };
 
+export type AIResponseArgs = Record<string, unknown> & {
+  amount?: number;
+  category?: string;
+  description?: string;
+  date?: string;
+  period?: string;
+  start_date?: string;
+  end_date?: string;
+};
+
 export type AIResponse = {
-  type?: "advice" | "operation";
+  type: "advice" | "operation";
   function: string;
   confidence: number;
-  args: Record<string, any>;
+  args: AIResponseArgs;
   user_reply: string;
 };
 

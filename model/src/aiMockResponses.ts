@@ -7,6 +7,7 @@ export type { AIResponse };
 // 🔹 CREATE EXPENSE
 
 export const createExpenseGasolina: AIResponse = {
+  type: "operation",
   function: "create_expense",
   confidence: 0.98,
   args: {
@@ -19,30 +20,33 @@ export const createExpenseGasolina: AIResponse = {
 };
 
 export const createExpensePrenda: AIResponse = {
+  type: "operation",
   function: "create_expense",
   confidence: 0.98,
   args: {
     description: "Prenda",
     amount: 25,
-    category: "Clothing",
+    category: "Shopping",
     date: "2026-04-27",
   },
   user_reply: "Registei 25€ em roupas.",
 };
 
 export const createExpenseTelemovel: AIResponse = {
+  type: "operation",
   function: "create_expense",
   confidence: 0.98,
   args: {
     description: "Telemovel",
     amount: 1400,
-    category: "Electronics",
+    category: "Shopping",
     date: "2026-04-27",
   },
   user_reply: "Registei 1400€ em eletrónica.",
 };
 
 export const createExpenseJantar: AIResponse = {
+  type: "operation",
   function: "create_expense",
   confidence: 0.96,
   args: {
@@ -55,6 +59,7 @@ export const createExpenseJantar: AIResponse = {
 };
 
 export const createExpenseUberOntem: AIResponse = {
+  type: "operation",
   function: "create_expense",
   confidence: 0.93,
   args: {
@@ -70,10 +75,11 @@ export const createExpenseUberOntem: AIResponse = {
 // 🔹 QUERIES
 
 export const getDaysSpendingMonth: AIResponse = {
+  type: "operation",
   function: "get_days_spending_month",
   confidence: 0.95,
   args: {
-    period: "current_month",
+    period: "04",
     start_date: "2026-04-01",
     end_date: "2026-04-27",
   },
@@ -81,26 +87,33 @@ export const getDaysSpendingMonth: AIResponse = {
 };
 
 export const getCategorySpendingFood: AIResponse = {
+  type: "operation",
   function: "get_category_spending",
   confidence: 0.94,
   args: {
     category: "Food",
     period: "04",
+    start_date: "2026-04-01",
+    end_date: "2026-04-30",
   },
   user_reply: "",
 };
 
 export const getSpendingSummary: AIResponse = {
+  type: "operation",
   function: "get_days_spending_month",
   confidence: 0.92,
   args: {
     period: "04",
+    start_date: "2026-04-01",
+    end_date: "2026-04-30",
   },
   user_reply: "",
 };
 
 export const getSavingAdvice: AIResponse = {
-  function: "get_saving_advice",
+  type: "advice",
+  function: "advice",
   confidence: 0.9,
   args: {
     period: "current_month",
@@ -111,6 +124,7 @@ export const getSavingAdvice: AIResponse = {
 // 🔹 EDIT / DELETE
 
 export const deleteLastExpense: AIResponse = {
+  type: "operation",
   function: "delete_last_expense",
   confidence: 0.97,
   args: {},
@@ -118,6 +132,7 @@ export const deleteLastExpense: AIResponse = {
 };
 
 export const updateLastExpense: AIResponse = {
+  type: "operation",
   function: "update_last_expense",
   confidence: 0.91,
   args: {
@@ -130,6 +145,7 @@ export const updateLastExpense: AIResponse = {
 // 🔹 OTHER
 
 export const greeting: AIResponse = {
+  type: "operation",
   function: "greeting",
   confidence: 0.99,
   args: {},
@@ -138,6 +154,7 @@ export const greeting: AIResponse = {
 };
 
 export const unknown: AIResponse = {
+  type: "operation",
   function: "unknown",
   confidence: 0.4,
   args: {},

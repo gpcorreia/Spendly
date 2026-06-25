@@ -121,10 +121,34 @@ Quando quiseres, envia a tua primeira despesa.`;
   public categorySummary(
     category: string,
     month: string,
+    expenses: { description: string; amount: string; date: string }[],
     total: number
   ): string {
+    if (expenses.length === 0) {
+      return this.withClosing(
+        `🏷️ ${this.formatCategory(category)} em ${month}\n\n${this.noData()}`
+      );
+    }
+
+    const formatDate = (date: string): string => {
+      const [year, monthNumber, day] = date.split("-");
+      return `${day}/${monthNumber}/${year}`;
+    };
+
+    const dates = expenses.map((expense) => expense.date).sort();
+    const startDate = formatDate(dates[0]);
+    const endDate = formatDate(dates[dates.length - 1]);
+    const period = startDate === endDate ? startDate : `${startDate} - ${endDate}`;
+    const categoryIcon = this.categoryIcons[category] ?? "🏷️";
+
+    const expensesList = expenses
+      .map((expense) =>
+        `• ${expense.description}: ${this.formatMoney(Number(expense.amount))} — ${formatDate(expense.date)}`
+      )
+      .join("\n");
+
     return this.withClosing(
-      `🏷️ ${this.formatCategory(category)} em ${month}\n\n💶 Total registado: ${this.formatMoney(total)}`
+      `📊 Resumo de gastos em ${this.formatCategory(category)}\n📅 ${period}\n\n${categoryIcon} ${this.formatCategory(category)} → ${this.formatMoney(total)}\n${expensesList}\n\n`
     );
   }
 
