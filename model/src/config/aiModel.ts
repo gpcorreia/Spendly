@@ -31,6 +31,35 @@ export class AIModel {
     });
   }
 
+  private getErrorDetails(error: unknown): Record<string, unknown> {
+    if (!error || typeof error !== 'object') {
+      return { error: String(error) };
+    }
+
+    const candidate = error as {
+      message?: string;
+      status?: number;
+      code?: string;
+      type?: string;
+      name?: string;
+      response?: {
+        status?: number;
+        data?: unknown;
+      };
+      error?: unknown;
+    };
+
+    return {
+      name: candidate.name,
+      message: candidate.message,
+      status: candidate.status ?? candidate.response?.status,
+      code: candidate.code,
+      type: candidate.type,
+      providerError: candidate.error,
+      responseData: candidate.response?.data,
+    };
+  }
+
   getAIResponse = async <T>(
     message: string,
     systemPrompt: string,
@@ -45,13 +74,20 @@ export class AIModel {
     const maximumAttempts = 2 ;
 
     for(let attempt = 1; attempt <= maximumAttempts; attempt++) {
+      const startedAt = Date.now();
 
       try {
         const retryInstruction = attempt === 1 ? '': `A resposta anterior era inválida.
         Analisa novamente a mensagem original e devolve apenas o JSON pedido.
         Respeita exatamente os campos, tipos e valores definidos neste prompt.`;
 
-      
+        console.log('AI request started:', {
+          model,
+          attempt,
+          systemPromptChars: systemPrompt.length,
+          messageChars: message.length,
+        });
+
         const response = await this.client.chat.completions.create({
           model,
           messages: [
@@ -60,15 +96,36 @@ export class AIModel {
           ],
         });
 
-        const responseText = response.choices[0]?.message?.content;
+        const responseText = response.choices?.[0]?.message?.content;
 
         if (!responseText) {
-          throw new AIResponseParseError('AI response is empty');
+          console.error('AI response had no message content:', {
+            model,
+            attempt,
+            response,
+          });
+          throw new AIResponseParseError('AI response is empty or missing choices');
         }
 
-        return validate(parseJSONResponse(responseText));
+        const parsedResponse = validate(parseJSONResponse(responseText));
+
+        console.log('AI request completed:', {
+          model,
+          attempt,
+          durationMs: Date.now() - startedAt,
+          responseChars: responseText.length,
+        });
+
+        return parsedResponse;
 
       }catch (error) {
+        console.error('AI request failed:', {
+          model,
+          attempt,
+          durationMs: Date.now() - startedAt,
+          ...this.getErrorDetails(error),
+        });
+
         const isInvalidAIResponse =
         error instanceof AIResponseParseError ||
         error instanceof AIResponseValidationError;

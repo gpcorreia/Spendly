@@ -4,7 +4,7 @@ const operationFunctions = [
   'create_expense',
   'get_days_spending_month',
   'get_category_spending',
-  'get_spending_summary',
+  'delete_expense',
   'delete_last_expense',
   'update_last_expense',
   'greeting',
@@ -93,7 +93,7 @@ const validateDateRange = (args: JsonObject): void => {
   }
 };
 
-const validateOperationArgs = (functionName: string, args: JsonObject): void => {
+const validateOperationArgs = (functionName: string, args: JsonObject, userReply: string): void => {
   switch (functionName) {
     case 'create_expense':
       requirePositiveNumber(args, 'amount');
@@ -110,6 +110,15 @@ const validateOperationArgs = (functionName: string, args: JsonObject): void => 
       validateDateRange(args);
       if (args.category !== undefined) {
         validateCategory(args.category);
+      }
+      break;
+    case 'delete_expense':
+      if (args.description !== undefined) requireNonEmptyString(args, 'description');
+      if (args.date !== undefined) requireDate(args, 'date');
+      if (args.amount !== undefined) requirePositiveNumber(args, 'amount');
+      if (args.category !== undefined) validateCategory(args.category);
+      if ((args.description === undefined || args.date === undefined) && !userReply.trim()) {
+        throw new AIResponseValidationError('delete_expense requires user_reply when description or date is missing');
       }
       break;
     case 'update_last_expense': {
@@ -155,7 +164,7 @@ export const validateAIResponse = (value: unknown): AIResponse => {
     if (!(operationFunctions as readonly string[]).includes(functionName)) {
       throw new AIResponseValidationError(`Unsupported operation "${functionName}"`);
     }
-    validateOperationArgs(functionName, args);
+    validateOperationArgs(functionName, args, userReply);
   }
 
   return {
@@ -172,5 +181,8 @@ export const validateAdviceResponse = (value: unknown): AIResponseAdvice => {
     throw new AIResponseValidationError('Advice response must be a JSON object');
   }
 
-  return { msg: requireNonEmptyString(value, 'msg') };
+  return {
+    msg: requireNonEmptyString(value, 'msg'),
+    context_summary: requireNonEmptyString(value, 'context_summary'),
+  };
 };

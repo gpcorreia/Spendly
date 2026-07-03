@@ -3,16 +3,32 @@ import { User } from "../repositories/userRepository";
 export class userResponses {
   private readonly categoryLabels: Record<string, string> = {
     Food: "Alimentação",
+    Groceries: "Supermercado",
     Transport: "Transportes",
+    Fuel: "Combustível",
+    Rent: "Renda",
+    Bills: "Contas",
     Entertainment: "Lazer",
+    Health: "Saúde",
+    Subscriptions: "Subscrições",
+    Travel: "Viagens",
     Shopping: "Compras",
+    Other: "Outros",
   };
 
   private readonly categoryIcons: Record<string, string> = {
     Food: "🍽️",
+    Groceries: "🛒",
     Transport: "🚗",
+    Fuel: "⛽",
+    Rent: "🏠",
+    Bills: "🧾",
     Entertainment: "🎬",
+    Health: "🏥",
+    Subscriptions: "📱",
+    Travel: "✈️",
     Shopping: "🛍️",
+    Other: "📌",
   };
 
   private readonly closingMessage =
@@ -90,8 +106,28 @@ Quando quiseres, envia a tua primeira despesa.`;
     );
   }
 
-  public lastExpenseDeleted(expense: string | number): string {
-    return this.withClosing(`🗑️ Última despesa eliminada\n\n${expense}`);
+  public expenseDeleted(expense: unknown): string {
+    const deletedExpense = Array.isArray(expense) ? expense[0] : expense;
+
+    if (!deletedExpense || typeof deletedExpense !== "object") {
+      return this.withClosing(`🗑️ Despesa eliminada`);
+    }
+
+    const item = deletedExpense as {
+      description?: string;
+      amount?: string | number;
+      category?: string;
+      expense_date?: string;
+    };
+
+    const title = item.description?.trim() || "Despesa";
+    const amount = Number(item.amount ?? 0);
+    const category = item.category ? this.formatCategory(item.category) : "Sem categoria";
+    const date = item.expense_date ?? "Sem data";
+
+    return this.withClosing(
+      `🗑️ Última despesa eliminada\n\n📝 ${title}\n🏷️ Categoria: ${category}\n💶 Valor: ${this.formatMoney(amount)}\n📅 Data: ${date}`
+    );
   }
 
   public monthlySummary(month: string, total: number, expenses: { description: string; amount: number }[]): string {

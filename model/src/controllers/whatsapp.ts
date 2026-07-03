@@ -17,6 +17,7 @@ import type {
   WhatsAppMessage,
   WhatsAppWebhookValue,
 } from '../types';
+import { AdviceRepository } from '../repositories/adviceRepository';
 
 const months: Record<string,string> = {
   "01": "Janeiro",
@@ -33,11 +34,36 @@ const months: Record<string,string> = {
   "12": "Dezembro",
 }
 
+const getErrorLogDetails = (error: unknown): Record<string, unknown> => {
+  if (!error || typeof error !== 'object') {
+    return { error: String(error) };
+  }
+
+  const candidate = error as {
+    name?: string;
+    message?: string;
+    code?: string;
+    details?: string;
+    hint?: string;
+    status?: number;
+  };
+
+  return {
+    name: candidate.name,
+    message: candidate.message,
+    code: candidate.code,
+    details: candidate.details,
+    hint: candidate.hint,
+    status: candidate.status,
+    raw: JSON.stringify(error),
+  };
+};
 
 export class WhatsAppController {
   private whatsappService: WhatsAppService;
   private userRepository: UserRepository;
   private ExpenseRepository: ExpenseRepository;
+  private AdviceRepository: AdviceRepository;
   private model: AIModel;
   private userRes: userResponses;
   private advicePrompt : string;
@@ -49,6 +75,7 @@ export class WhatsAppController {
     this.whatsappService = new WhatsAppService();
     this.userRepository = new UserRepository();
     this.ExpenseRepository = new ExpenseRepository();
+    this.AdviceRepository = new AdviceRepository();
     this.model = new AIModel();
     this.userRes = new userResponses();
     this.advicePrompt = formatAdvicePrompt();
@@ -115,23 +142,43 @@ export class WhatsAppController {
       
       else if(aiResponse.function === 'delete_last_expense') {
         const lastExpense = await this.ExpenseRepository.delete_last_expense(user.id);
-        msg = lastExpense===0 ?this.userRes.lastExpenseDeleted(lastExpense) : this.userRes.generalError();
+        msg = lastExpense!=0 ? this.userRes.expenseDeleted(lastExpense) : this.userRes.generalError();
+      }
+      
+      else if(aiResponse.function === 'delete_expense') {
+        if(aiResponse.args.date && aiResponse.args.description){
+          const deletedExpense = await this.ExpenseRepository.delete_expense(user.id, aiResponse);
+          msg = deletedExpense!=0 ? this.userRes.expenseDeleted(deletedExpense) : this.userRes.generalError();
+        }
+        else{
+          msg = aiResponse.user_reply || this.userRes.generalError();
+        }
       }
 
       return msg;
 
   }
 
-  advicePath = async (aiResponse: AIResponse, user:User): Promise<string> => {
+  advicePath = async (user:User, userMessage: string, activeAdviceContext: string | null): Promise<string> => {
     
     let msg = '';
 
-    const last2monthsExpenses = await this.ExpenseRepository.get_saving_advice(user.id);
+    const last2monthsExpenses = await this.ExpenseRepository.get_user_data_advice(user.id);
+
+    const adviceInput = {
+      user_message: userMessage,
+      previous_context: activeAdviceContext,
+      recent_expenses: last2monthsExpenses,
+    };
+
     const adviceResponse: AIResponseAdvice = await this.model.getAIResponse(
-      JSON.stringify(last2monthsExpenses),
+      JSON.stringify(adviceInput),
       this.advicePrompt,
       validateAdviceResponse,
     );
+
+    await this.AdviceRepository.set_context_advice(user.id, adviceResponse.context_summary);
+
     msg = adviceResponse.msg;
   
     return msg;
@@ -178,8 +225,18 @@ export class WhatsAppController {
 
       try {
         // Rebuild the prompt for every message so relative dates always use today's date.
+        const activeAdviceContext = await this.AdviceRepository.get_context_advice(user.id);
+        let fallbackReply = '';
+        
+        const routerMessage = activeAdviceContext
+          ? JSON.stringify({
+              user_message: payload.body,
+              previous_context: activeAdviceContext.context_summary,
+            })
+          : payload.body;
+
         const aiResponse = await this.model.getAIResponse(
-          payload.body,
+          routerMessage,
           formatOperationPrompt(),
           validateAIResponse,
         );
@@ -191,20 +248,22 @@ export class WhatsAppController {
           confidence: aiResponse.confidence,
         });
 
+        fallbackReply = aiResponse.user_reply;
+
         if (aiResponse.type === 'advice') {
-          msg = await this.advicePath(aiResponse,user);
+          msg = await this.advicePath(user,payload.body,activeAdviceContext?.context_summary ?? null);
         }
         else if(aiResponse.type === 'operation'){
           msg = await this.operationsPath(aiResponse,user);
         }
 
         if (!msg) {
-          msg = aiResponse.user_reply || this.userRes.generalError();
+          msg = fallbackReply || this.userRes.generalError();
         }
       } catch (error) {
         console.error('Unable to process AI operation:', {
           messageId: payload.message_id,
-          error: error instanceof Error ? error.message : String(error),
+          ...getErrorLogDetails(error),
         });
         msg = this.userRes.generalError();
       }

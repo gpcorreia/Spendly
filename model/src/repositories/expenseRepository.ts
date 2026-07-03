@@ -154,19 +154,65 @@ export class ExpenseRepository {
   async delete_last_expense(userId: string): Promise<any> {
     const { data, error } = await supabase
       .from('expenses')
-      .delete()
+      .select("*")
       .eq('user_id', userId)
       .order('created_at', { ascending: false })
       .limit(1) 
-    
-    if (error) {
-      throw error; 
+
+      if(!data || data.length === 0) {
+        console.log('No expenses found for user:', userId);
+        return 0;
+      }
+      // 2. apagar exatamente essa despesa pelo id
+    const { data: lastExpense,error: deleteError } = await supabase
+      .from('expenses')
+      .delete()
+      .eq('id', data[0]?.id).eq('user_id', userId).select();
+
+    if (deleteError) {
+      throw deleteError;
     }
 
-    return 0;
+    return lastExpense;
+
   }
   
-  async get_saving_advice(userId: string): Promise<any> {
+  async delete_expense(userId: string, expense: AIResponse): Promise<any> {
+    
+    const { data, error } = await supabase
+      .from('expenses')
+      .select("*")
+      .eq('user_id', userId)
+      .eq('expense_date', expense.args.date)
+      .ilike('description', `%${expense.args.description}%`)
+      .order('created_at', { ascending: false })
+      .limit(1) 
+
+    if (error) {
+      throw error;
+    }
+
+    if(!data || data.length === 0) {
+      console.log('No expenses found for user:', userId);
+      return 0;
+    }
+
+    // 2. apagar exatamente essa despesa pelo id
+    const { data: lastExpense,error: deleteError } = await supabase
+      .from('expenses')
+      .delete()
+      .eq('id', data[0]?.id).eq('user_id', userId)
+      .select();
+
+    if (deleteError) {
+      throw deleteError;
+    }
+
+    return lastExpense;
+
+  }
+  
+  async get_user_data_advice(userId: string): Promise<any> {
     const { data, error } = await supabase
       .from('expenses')
       .select('description,category, amount')
@@ -179,4 +225,5 @@ export class ExpenseRepository {
   
     return data;
   }
+  
 }

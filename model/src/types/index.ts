@@ -36,6 +36,7 @@ export type AIResponse = {
 
 export type AIResponseAdvice = {
   msg: string;
+  context_summary: string;
 };
 
 export type WhatsAppMessage = {
