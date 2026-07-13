@@ -75,10 +75,12 @@ test('accepts a valid advice route and advice result', () => {
   });
   const advice = validateAdviceResponse({
     msg: 'Podes rever as tuas subscrições mensais.',
+    context_summary: 'User recebeu conselho para rever subscrições mensais.',
   });
 
   assert.equal(route.type, 'advice');
   assert.match(advice.msg, /subscrições/);
+  assert.match(advice.context_summary, /subscrições/);
 });
 
 test('rejects unsupported operations', () => {

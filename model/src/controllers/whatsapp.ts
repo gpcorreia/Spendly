@@ -99,10 +99,12 @@ export class WhatsAppController {
   operationsPath = async (aiResponse: AIResponse, user:User): Promise<string> => {
     
     let msg = '';
+    let shouldClearAdviceContext = false;
 
     
     if(aiResponse.function === 'create_expense') {
         await this.ExpenseRepository.createExpense(user.id,aiResponse);
+        shouldClearAdviceContext = true;
         msg = this.userRes.expenseCreated(
           aiResponse.args.amount!,
           aiResponse.args.category!,
@@ -112,6 +114,7 @@ export class WhatsAppController {
       }
       
       else if(aiResponse.function === 'get_category_spending') {
+        shouldClearAdviceContext = true;
         if(aiResponse.args.category) {
           const specificCategorySpending = await this.ExpenseRepository.get_specific_category_spending(user.id,aiResponse);
           msg = this.userRes.categorySummary(
@@ -132,6 +135,7 @@ export class WhatsAppController {
       }
       
       else if(aiResponse.function === 'get_days_spending_month') {
+        shouldClearAdviceContext = true;
         const expensesofMonth = await this.ExpenseRepository.get_days_spending_month(user.id,aiResponse);
         msg = this.userRes.monthlySummary(
           months[aiResponse.args.period!] ?? aiResponse.args.period!,
@@ -141,11 +145,13 @@ export class WhatsAppController {
       }
       
       else if(aiResponse.function === 'delete_last_expense') {
+        shouldClearAdviceContext = true;
         const lastExpense = await this.ExpenseRepository.delete_last_expense(user.id);
         msg = lastExpense!=0 ? this.userRes.expenseDeleted(lastExpense) : this.userRes.generalError();
       }
       
       else if(aiResponse.function === 'delete_expense') {
+        shouldClearAdviceContext = true;
         if(aiResponse.args.date && aiResponse.args.description){
           const deletedExpense = await this.ExpenseRepository.delete_expense(user.id, aiResponse);
           msg = deletedExpense!=0 ? this.userRes.expenseDeleted(deletedExpense) : this.userRes.generalError();
@@ -153,6 +159,10 @@ export class WhatsAppController {
         else{
           msg = aiResponse.user_reply || this.userRes.generalError();
         }
+      }
+
+      if (shouldClearAdviceContext) {
+        await this.AdviceRepository.delete_context_advice(user.id);
       }
 
       return msg;
@@ -215,13 +225,30 @@ export class WhatsAppController {
         return;
       }
 
-      const user = await this.userRepository.findOrCreate({
+      const user = await this.userRepository.findUser({
         phoneNumber: payload.number,
         name: payload.number_name,
         number_id: payload.number_id,
         timestamp: payload.timestamp,
         email: '',
       });
+
+      //Caso user nao exista, enviar mensagem de erro e retornar 404
+      if(!user){
+        msg = this.userRes.generalError();
+        console.warn('WhatsApp user not found:', {
+          messageId: payload.message_id,
+          phoneNumber: payload.number,
+        });
+
+        if(process.env.TEST_MODE === 'true') {
+          console.log('TEST_MODE MESSAGE:', {
+            to: payload.number,
+            message: msg,
+          });
+        }
+        return;
+      }
 
       try {
         // Rebuild the prompt for every message so relative dates always use today's date.

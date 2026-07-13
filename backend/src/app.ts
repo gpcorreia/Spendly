@@ -2,6 +2,7 @@ import path from "path";
 import cors from "cors";
 import express, { NextFunction, Request, Response } from "express";
 import paymentsRoutes from "./routes/payments";
+import emailRoutes from "./routes/email";
 import { Stripe } from "stripe";
 
 export const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || "sk_test_missing");
@@ -36,6 +37,7 @@ app.use((request: Request, response: Response, next: NextFunction) => {
 });
 
 app.use(paymentsRoutes);
+app.use("/webservice",emailRoutes);
 
 app.get("/health", (_request: Request, response: Response) => {
   response.status(200).json({ status: "ok", service: "spendly-backend" });

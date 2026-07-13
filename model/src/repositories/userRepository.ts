@@ -10,6 +10,7 @@ export class UserRepository {
       .from('users')
       .select('*')
       .eq('phone_number', phoneNumber)
+      .eq('payment', true || 'true')
       .single();
 
     if (error && error.code !== 'PGRST116') {
@@ -40,10 +41,10 @@ export class UserRepository {
     return data;
   }
 
-  async findOrCreate(payload: UserPayload): Promise<User> {
+  async findUser(payload: UserPayload): Promise<  User | null> {
     let user = await this.findByPhoneNumber(payload.phoneNumber);
     if (!user) {
-      user = await this.create(payload);
+      return null;
     }
     return user;
   }
