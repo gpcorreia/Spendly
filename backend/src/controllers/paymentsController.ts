@@ -23,6 +23,7 @@ async function triggerFirstWhatsAppMessage(userId: string): Promise<void> {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
+          "x-internal-secret": process.env.INTERNAL_API_SECRET || "",
         },
         body: JSON.stringify({ user_id: userId }),
       }
@@ -43,6 +44,7 @@ async function triggerFirstWhatsAppMessage(userId: string): Promise<void> {
     });
   }
 }
+
 
 export async function createCheckoutSession(
   request: Request,
@@ -119,8 +121,10 @@ export async function handleStripeWebhook(
     return;
   }
 
-  if (event.type === "checkout.session.completed") {
-
+  if (event.type !== "checkout.session.completed") {
+    res.status(200).json({ received: true, ignored: true });
+    return;
+  }
 
     const session = event.data.object as Stripe.Checkout.Session;
     const email = session.customer_details?.email || "";
@@ -140,11 +144,18 @@ export async function handleStripeWebhook(
     try {
       const user = await userRepository.create({ email, name, phone_number, payment: true });
 
+      if(user === "existing") {
+        console.log("Stripe checkout already processed for this email. Skipping welcome flow.", {
+          email,
+          sessionId: session.id,
+        });
+        return;
+      }
+
       try {
         const emailSent = await sendWelcomeEmail({
           to: user.email,
           name: user.name,
-          accessToken: user.access_token,
         });
 
         if (!emailSent) {
@@ -164,9 +175,10 @@ export async function handleStripeWebhook(
         sessionId: session.id,
         error,
       });
-      res.status(500).send("Failed to process checkout session");
+      if (!res.headersSent) {
+        res.status(500).send("Failed to process checkout session");
+      }
       return;
     }
-  }
 
 }

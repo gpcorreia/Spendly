@@ -62,9 +62,8 @@ export class UserRepository {
       throw error;
     }
 
-    if (!data || !data.access_token) {
-      throw new Error('User not activated');
-      
+    if (!data || !data.payment) {
+      throw new Error('User not active');
     }
   
     return data as User;

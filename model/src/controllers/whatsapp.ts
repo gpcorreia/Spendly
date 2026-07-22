@@ -301,10 +301,11 @@ export class WhatsAppController {
           message: msg,
         });
       }
-      // const data = await this.whatsappService.sendMessage(payload.number, msg);
-      // if (!data) {
-      //   console.error('Failed to send WhatsApp message:', payload.message_id);
-      // }
+      
+      const data = await this.whatsappService.sendMessage(payload.number, msg);
+      if (!data) {
+        console.error('Failed to send WhatsApp message:', payload.message_id);
+      }
     } catch (error) {
       console.error('Error handling WhatsApp webhook:', error);
       if (!res.headersSent) {

@@ -66,7 +66,7 @@ export function buildWelcomeEmailHtml(displayName: string, whatsappLink: string)
   const safeDisplayName = escapeHtml(displayName);
 
   return buildEmailShell({
-    title: "Ativa o teu acesso ao Spendly",
+    title: "Começa a usar o Spendly",
     footer: "Recebeste este email porque compraste acesso ao Spendly.",
     children: `
             <tr>
@@ -83,16 +83,16 @@ export function buildWelcomeEmailHtml(displayName: string, whatsappLink: string)
                   Ol&aacute; ${safeDisplayName},
                 </p>
                 <p style="margin:0 0 18px 0;font-size:16px;line-height:24px;color:#26352b;">
-                  Obrigado por comprares o Spendly. Falta s&oacute; ativares o teu acesso no WhatsApp para come&ccedil;ares a registar despesas e consultar os teus gastos.
+                  Obrigado por comprares o Spendly. A tua conta j&aacute; est&aacute; ativa e pronta a usar.
                 </p>
                 <p style="margin:0 0 26px 0;font-size:16px;line-height:24px;color:#26352b;">
-                  Clica no bot&atilde;o abaixo. O WhatsApp vai abrir com uma mensagem de ativa&ccedil;&atilde;o j&aacute; preenchida. S&oacute; tens de enviar essa mensagem.
+                  Clica no bot&atilde;o abaixo para abrir a conversa no WhatsApp e come&ccedil;ar a registar despesas de forma simples.
                 </p>
                 <table role="presentation" cellspacing="0" cellpadding="0" style="margin:0 0 26px 0;">
                   <tr>
                     <td bgcolor="#16803c" style="border-radius:8px;">
                       <a href="${whatsappLink}" style="display:inline-block;padding:14px 22px;font-size:16px;line-height:20px;font-weight:700;color:#ffffff;text-decoration:none;border-radius:8px;">
-                        Ativar no WhatsApp
+                        Abrir no WhatsApp
                       </a>
                     </td>
                   </tr>
@@ -123,7 +123,7 @@ export function buildWelcomeEmailText(displayName: string, whatsappLink: string)
 
 Obrigado por comprares o Spendly.
 
-O teu acesso esta pronto. Para ativares o Spendly no WhatsApp, abre este link e envia a mensagem que ja vem preenchida:
+O teu acesso esta pronto. Para começares a usar o Spendly no WhatsApp, abre este link:
 
 ${whatsappLink}
 

@@ -1,5 +1,4 @@
 import supabase from '../config/supabase';
-import crypto from 'crypto';
 
 export type User = {
   id: string;
@@ -9,7 +8,6 @@ export type User = {
   number_id: string;
   timestamp: string;
   payment: boolean;
-  access_token: string;
 };
 
 export type CreateUserPayload = {
@@ -20,8 +18,7 @@ export type CreateUserPayload = {
 };
 
 export class UserRepository {
-  async create(user: CreateUserPayload): Promise<User> {
-    const accessToken = crypto.randomUUID();
+  async create(user: CreateUserPayload): Promise<User | "existing"> {
     const { data, error } = await supabase
       .from('users')
       .insert({
@@ -30,11 +27,13 @@ export class UserRepository {
         phone_number: user.phone_number,
         payment: user.payment,
         timestamp: Date.now().toString(),
-        access_token: accessToken,
       })
       .select()
       .single();
 
+    if (error?.code === "23505") {
+      return "existing";
+    }
     if (error) {
       console.error('Error creating user:', error);
       throw error;

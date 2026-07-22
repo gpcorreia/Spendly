@@ -5,7 +5,6 @@ export type User = {
   name: string;
   number_id: string;
   timestamp: string;
-  access_token?: string;
 };
 
 export type UserPayload = {

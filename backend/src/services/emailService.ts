@@ -11,7 +11,6 @@ import {
 type SendWelcomeEmailParams = {
   to: string;
   name?: string;
-  accessToken: string;
 };
 
 type SendMonthlySummaryEmailParams = {
@@ -23,14 +22,14 @@ type SendMonthlySummaryEmailParams = {
   excelAttachment?: Attachment;
 };
 
-function buildWhatsappActivationLink(accessToken: string): string {
+function buildWhatsappConversationLink(): string {
   const botNumber = process.env.WHATSAPP_BOT_NUMBER;
 
   if (!botNumber) {
     throw new Error("Missing WHATSAPP_BOT_NUMBER env variable.");
   }
 
-  return `https://wa.me/${botNumber}?text=${encodeURIComponent(`ativar ${accessToken}`)}`;
+  return `https://wa.me/${botNumber}?text=${encodeURIComponent("Olá Spendly")}`;
 }
 
 function createEmailTransporter() {
@@ -62,7 +61,6 @@ function getDisplayName(name?: string): string {
 export async function sendWelcomeEmail({
   to,
   name,
-  accessToken,
 }: SendWelcomeEmailParams): Promise<boolean> {
   const transporter = createEmailTransporter();
 
@@ -71,7 +69,7 @@ export async function sendWelcomeEmail({
     return false;
   }
 
-  const whatsappLink = buildWhatsappActivationLink(accessToken);
+  const whatsappLink = buildWhatsappConversationLink();
   const displayName = getDisplayName(name);
 
   await transporter.sendMail({
